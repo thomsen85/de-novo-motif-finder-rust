@@ -8,6 +8,7 @@ use itertools::Itertools;
 #[derive(Debug, PartialEq)]
 pub struct Pwm {
     matrix: Vec<[f64; 4]>,
+    pub history: Vec<Sequence>,
 }
 
 impl Pwm {
@@ -18,13 +19,14 @@ impl Pwm {
 
         let mut matrix = vec![[0.0; 4]; seqs[0].len()];
 
+        let history = seqs.to_vec();
         for seq in seqs {
             for (i, base) in seq.bases.iter().enumerate() {
                 matrix[i][base.to_index()] += 1.0;
             }
         }
 
-        Self { matrix }
+        Self { matrix, history }
     }
 
     pub fn get_custom_score(&self) -> f64 {
@@ -33,19 +35,62 @@ impl Pwm {
             .map(|row| row.iter().map(|&count| count.powf(Self::POWF)).sum::<f64>())
             .sum::<f64>()
             / self.len() as f64
+            / self.history.len() as f64
     }
 
     pub fn add_sequence_to_pwm(&mut self, seq: &Sequence) {
         assert_eq!(self.len(), seq.len());
-        todo!()
+
+        self.history.push(seq.clone());
+
+        for (i, base) in seq.bases.iter().enumerate() {
+            self.matrix[i][base.to_index()] += 1.0;
+        }
     }
 
     pub fn len(&self) -> usize {
         self.matrix.len()
     }
+
+    pub fn slice(
+        &self,
+        range: impl RangeBounds<usize>
+            + SliceIndex<[[f64; 4]], Output = [[f64; 4]]>
+            + SliceIndex<[Base], Output = [Base]>
+            + Clone,
+    ) -> Self {
+        let matrix = self.matrix[range.clone()].to_vec();
+        let history = self
+            .history
+            .iter()
+            .map(|s| s.slice(range.clone()))
+            .collect();
+
+        Self { matrix, history }
+    }
+
+    pub fn get_consensus_string(&self) -> String {
+        self.matrix
+            .iter()
+            .map(|row| {
+                let max = row
+                    .iter()
+                    .position_max_by(|a, b| a.partial_cmp(b).unwrap())
+                    .unwrap();
+
+                match max {
+                    0 => 'A',
+                    1 => 'C',
+                    2 => 'G',
+                    3 => 'T',
+                    _ => unreachable!(),
+                }
+            })
+            .collect()
+    }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Base {
     A,
     C,
@@ -77,7 +122,7 @@ impl Base {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Sequence {
     pub bases: Vec<Base>,
 }
