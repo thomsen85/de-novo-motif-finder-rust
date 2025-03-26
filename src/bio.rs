@@ -1,4 +1,5 @@
 use std::{
+    hash::Hash,
     ops::{Index, RangeBounds},
     slice::SliceIndex,
 };

@@ -56,8 +56,6 @@ fn create_and_load_char_bitmaps() -> [DynamicImage; 4] {
 
         root.present().unwrap();
 
-        println!("Created bitmap for {}", base);
-
         images.push(image::open(&file_path).unwrap());
     }
 

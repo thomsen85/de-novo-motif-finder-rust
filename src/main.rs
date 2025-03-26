@@ -1,4 +1,8 @@
-use std::{collections::BinaryHeap, io::Write, path::Path};
+use std::{
+    collections::{BinaryHeap, HashMap},
+    io::Write,
+    path::Path,
+};
 
 use bio::{Pwm, Sequence};
 use clap::Parser;
@@ -37,6 +41,14 @@ struct Args {
     /// Name of the person to greet
     #[arg(short, long)]
     input_file: String,
+
+    /// Amount of hits to return
+    #[arg(short, long, default_value = "3")]
+    hits: usize,
+
+    /// If you want to create sequence logos
+    #[arg(short, long)]
+    create_logos: bool,
 }
 
 fn main() {
@@ -73,10 +85,13 @@ fn main() {
         });
 
     println!("Starting search...");
-    let mut top_results = Vec::new();
+    let mut top_results = HashMap::new();
     // let mut seen = HashSet::new();
 
     while let Some(RankedPfm(pfm, score, indicies)) = priority_queue.pop() {
+        if top_results.contains_key(&pfm.get_consensus_string()) {
+            continue;
+        }
         print!(
             "\rScore: {:.2}, Depth: {}, Size: {}",
             score,
@@ -93,12 +108,14 @@ fn main() {
         // seen.insert((consensus, indicies.clone()));
 
         if indicies >= seqs.len() {
-            top_results.push((pfm, score));
+            top_results
+                .entry(pfm.get_consensus_string())
+                .or_insert((pfm, score));
 
-            if top_results.len() >= only_take_top_score {
+            if top_results.len() >= args.hits {
+                println!("Found all hits!");
                 break;
             }
-            println!("Score: {:.2}", score);
 
             continue;
         }
@@ -112,7 +129,7 @@ fn main() {
                 RankedPfm(pfm, new_score, indicies + 1)
             })
             .sorted_by(|a, b| b.1.partial_cmp(&a.1).unwrap())
-            .take(3)
+            .take(only_take_top_score)
             .for_each(|x| {
                 priority_queue.push(x);
             });
@@ -126,21 +143,16 @@ fn main() {
         }
     }
 
-    for (pwm, score) in top_results
+    for (consensus_string, (pwm, score)) in top_results
         .into_iter()
-        .sorted_by(|a, b| b.1.partial_cmp(&a.1).unwrap())
+        .sorted_by(|a, b| b.1 .1.partial_cmp(&a.1 .1).unwrap())
         .take(3)
     {
         println!("Score: {:.2}", score);
-        println!("{:?}", pwm.get_consensus_string());
+        println!("{:?}", consensus_string);
         println!("{:?}", pwm.matrix);
         let pwm = pwm.pfm_to_pwm();
-        plot::plot_pwm(
-            &format!("{}.png", pwm.clone().get_consensus_string()),
-            &pwm,
-            score,
-        )
-        .unwrap();
+        plot::plot_pwm(&format!("{}.png", consensus_string), &pwm, score).unwrap();
     }
 
     clear_cache();
