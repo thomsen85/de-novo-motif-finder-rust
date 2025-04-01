@@ -1,8 +1,9 @@
-use crate::bio::Pwm;
 use full_palette::ORANGE;
 use image::DynamicImage;
 use itertools::Itertools;
 use plotters::{prelude::*, style::text_anchor::Pos};
+
+use crate::datastructures::pwm::Pwm;
 
 /// Nucleotides and their colors
 const BASES: [&str; 4] = ["A", "C", "G", "T"];
@@ -69,7 +70,6 @@ pub fn clear_cache() {
 }
 
 pub fn plot_pwm(name: &str, pwm: &Pwm, score: f64) -> Result<(), Box<dyn std::error::Error>> {
-    assert!(pwm.is_pwm);
     let images = create_and_load_char_bitmaps();
     let size_mul = 1;
     let root = BitMapBackend::new(name, (200 * pwm.len() as u32 * size_mul, 400 * size_mul))

@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use crate::bio::{Base, Sequence};
+use crate::datastructures::{base::Base, sequence::Sequence};
 
 pub fn read_fasta(path: &Path) -> Vec<Sequence> {
     let file = File::open(path)
