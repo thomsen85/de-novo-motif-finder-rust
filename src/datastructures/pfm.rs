@@ -59,32 +59,30 @@ impl Pfm {
         kl_divergence
     }
 
-    // https://www.maths.usyd.edu.au/u/uri/my_papers/2006_Evalue_finders_RecombRG_draft.pdf
-    // pub fn get_custom_score(&self) -> f64 {
-    //     let smoothing = 0.001;
-    //     self.matrix
-    //         .iter()
-    //         .map(|row| {
-    //             row.iter()
-    //                 .map(|&val| {
-    //                     (val as f64 + smoothing)
-    //                         * (((val as f64 + smoothing) / self.sample_size as f64) / 0.25).log2()
-    //                 })
-    //                 .sum::<f64>()
-    //                 / self.matrix.len() as f64
-    //         })
-    //         .sum()
-    // }
-
+    //https://www.maths.usyd.edu.au/u/uri/my_papers/2006_Evalue_finders_RecombRG_draft.pdf
     pub fn get_custom_score(&self) -> f64 {
-        let pwm = Pwm::from(self.clone());
-
-        pwm.matrix
+        let smoothing = 0.001;
+        self.matrix
             .iter()
-            .map(|row| row.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap())
-            .sum::<f64>()
-            / self.matrix.len() as f64
+            .map(|row| {
+                row.iter()
+                    .map(|&val| {
+                        (val as f64 + smoothing)
+                            * (((val as f64 + smoothing) / self.sample_size as f64) / 0.25).log2()
+                    })
+                    .sum::<f64>()
+            })
+            .sum()
     }
+
+    // pub fn get_custom_score(&self) -> f64 {
+    //     let pwm = Pwm::from(self.clone());
+    //
+    //     pwm.matrix
+    //         .iter()
+    //         .map(|row| row.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap())
+    //         .sum::<f64>()
+    // }
 }
 
 #[cfg(test)]
