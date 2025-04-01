@@ -34,6 +34,7 @@ impl Ord for RankedPfm {
 
 pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
     let mut priority_queue = BinaryHeap::new();
+    let max_seq_len = 20; // TODO: Make this a parameter
     let max_priority_queue_size = 1_000_000;
     let shrinked_priority_queue_size = 50;
 
@@ -45,7 +46,9 @@ pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
 
     get_all_shift_pfms(&seqs[0], &seqs[1], pfm_min_length)
         .into_iter()
-        .flat_map(|x| extraxt_high_interest_area(x, threshold, pfm_min_length, max_gap))
+        .flat_map(|x| {
+            extraxt_high_interest_area(x, threshold, pfm_min_length, max_seq_len, max_gap)
+        })
         .for_each(|pfm| {
             let score = pfm.clone().get_custom_score();
             priority_queue.push(RankedPfm(pfm, score, 2));
@@ -58,8 +61,8 @@ pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
         if top_results.contains_key(&pfm.get_consensus_string()) {
             continue;
         }
-        println!(
-            "Score: {:.2}, Depth: {}, Size: {}, String: {:?}",
+        print!(
+            "\rScore: {:.2}, Depth: {}, Size: {}, String: {:?}",
             score,
             indicies,
             priority_queue.len(),
@@ -85,7 +88,9 @@ pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
 
         get_all_shift_pfms_with_pfm(&pfm, next_seq, pfm_min_length)
             .into_iter()
-            .flat_map(|x| extraxt_high_interest_area(x, threshold, pfm_min_length, max_gap))
+            .flat_map(|x| {
+                extraxt_high_interest_area(x, threshold, pfm_min_length, max_seq_len, max_gap)
+            })
             .map(|pfm| {
                 let new_score = pfm.get_custom_score();
                 RankedPfm(pfm, new_score, indicies + 1)
@@ -213,6 +218,7 @@ fn extraxt_high_interest_area(
     pfm: Pfm,
     threshold: f64,
     min_len: usize,
+    max_len: usize,
     max_gap: Option<usize>,
 ) -> Vec<Pfm> {
     let mut pfm_copy = pfm.clone();
@@ -261,7 +267,12 @@ fn extraxt_high_interest_area(
             }
         }
 
-        if max_col_value < threshold && !start_points.is_empty() {
+        if (max_col_value < threshold
+            || start_points
+                .iter()
+                .any(|start_point| (p + max_gap.unwrap_or(0)) - start_point > max_len))
+            && !start_points.is_empty()
+        {
             for &start_point in start_points.iter() {
                 // Dont add to small sequences
                 if p - start_point < min_len {
@@ -279,6 +290,7 @@ fn extraxt_high_interest_area(
                     }
                 }
             }
+            start_points = Vec::new();
         }
 
         p += 1;
@@ -374,7 +386,7 @@ mod tests {
 
         let clipped_pfms = pfms
             .into_iter()
-            .flat_map(|x| extraxt_high_interest_area(x, 0.5, 4, Some(1)))
+            .flat_map(|x| extraxt_high_interest_area(x, 0.5, 4, 20, Some(1)))
             .sorted_by(|a, b| {
                 b.get_custom_score()
                     .partial_cmp(&a.get_custom_score())
@@ -394,7 +406,7 @@ mod tests {
     fn test_extract_high_interest_area_on_already_high_interest_area() {
         let pfm = Pfm::from_sequences(&[Sequence::from("ACGT"), Sequence::from("ACGT")]);
 
-        let res = extraxt_high_interest_area(pfm, 0.5, 2, Some(1));
+        let res = extraxt_high_interest_area(pfm, 0.5, 2, 20, Some(1));
 
         let best = res
             .into_iter()
