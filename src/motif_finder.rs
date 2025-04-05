@@ -110,17 +110,22 @@ pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
         }
     }
 
-    for (consensus_string, (pwm, score)) in top_results
+    for (consensus_string, (pfm, score)) in top_results
         .into_iter()
         .sorted_by(|a, b| b.1 .1.partial_cmp(&a.1 .1).unwrap())
         .take(3)
     {
-        println!("Score: {:.2}", score);
+        //println!("Score: {:.2}", score);
         println!("{:?}", consensus_string);
-        println!("{:?}", pwm.matrix);
+        println!(
+            "Kullback-Leibler divergence: {:.2}",
+            pfm.kullback_leibler_divergence()
+        );
+        // println!("{:?}", pfm.matrix);
+        println!();
 
         if plot_logos {
-            let pwm = Pwm::pfm_into_ppm(pwm);
+            let pwm = Pwm::pfm_into_ppm(pfm);
             plot::plot_pwm(&format!("{}.png", consensus_string), &pwm, score).unwrap();
         }
     }
