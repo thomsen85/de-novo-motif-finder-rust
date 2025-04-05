@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{ops::RangeBounds, slice::SliceIndex};
 
 use itertools::Itertools;
@@ -7,6 +9,8 @@ use super::{base::Base, sequence::Sequence};
 #[derive(Debug, Clone, PartialEq)]
 pub struct BaseMatrix<T> {
     pub matrix: Vec<[T; 4]>,
+
+    /// The number of sequences in used to create the matrix.
     pub sample_size: usize,
 }
 

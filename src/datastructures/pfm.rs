@@ -1,6 +1,8 @@
+#![allow(dead_code)]
+
 use itertools::Itertools;
 
-use super::{base_matrix::BaseMatrix, pwm::Pwm, sequence::Sequence};
+use super::{base_matrix::BaseMatrix, sequence::Sequence};
 
 pub type Pfm = BaseMatrix<usize>;
 
@@ -74,15 +76,6 @@ impl Pfm {
             })
             .sum()
     }
-
-    // pub fn get_custom_score(&self) -> f64 {
-    //     let pwm = Pwm::from(self.clone());
-    //
-    //     pwm.matrix
-    //         .iter()
-    //         .map(|row| row.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap())
-    //         .sum::<f64>()
-    // }
 }
 
 #[cfg(test)]
