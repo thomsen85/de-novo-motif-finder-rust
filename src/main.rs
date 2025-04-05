@@ -25,5 +25,5 @@ fn main() {
     );
     print!("====================");
 
-    motif_finder::motif_finder(seqs, args.plot_sequence_logos, args.hits);
+    motif_finder::motif_finder(seqs, args.plot_sequence_logos, args.hits, args.max_length);
 }

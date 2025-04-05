@@ -32,9 +32,8 @@ impl Ord for RankedPfm {
     }
 }
 
-pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
+pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize, max_seq_len: usize) {
     let mut priority_queue = BinaryHeap::new();
-    let max_seq_len = 20; // TODO: Make this a parameter
     let max_priority_queue_size = 1_000_000;
     let shrinked_priority_queue_size = 50;
 
@@ -122,12 +121,12 @@ pub fn motif_finder(seqs: Vec<Sequence>, plot_logos: bool, hits: usize) {
             pfm.kullback_leibler_divergence()
         );
         // println!("{:?}", pfm.matrix);
-        println!();
 
         if plot_logos {
             let pwm = Pwm::pfm_into_ppm(pfm);
             plot::plot_pwm(&format!("{}.png", consensus_string), &pwm, score).unwrap();
         }
+        println!();
     }
 
     plot::clear_cache();
